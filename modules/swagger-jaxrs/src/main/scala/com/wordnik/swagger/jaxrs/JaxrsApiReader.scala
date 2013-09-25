@@ -66,6 +66,17 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     }
   }
 
+  def accountForEnum (param : MutableParameter, cls : Class[_]) =
+  {
+    if (cls.isEnum)
+    {
+      param.allowableValues = AllowableListValues(cls.getEnumConstants.map(_.toString).toList)
+      param.dataType = "string"
+    }
+
+    cls.isEnum
+  }
+
   def parseOperation(
     method: Method, 
     apiOperation: ApiOperation, 
@@ -123,7 +134,9 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     val params = parentParams ++ (for((annotations, paramType, genericParamType) <- (paramAnnotations, paramTypes, genericParamTypes).zipped.toList) yield {
       if(annotations.length > 0) {
         val param = new MutableParameter
-        param.dataType = processDataType(paramType, genericParamType)
+
+        if (!accountForEnum(param, paramType))
+          param.dataType = processDataType(paramType, genericParamType)
         processParamAnnotations(param, annotations)
       }
       else if(paramTypes.size > 0) {
@@ -250,10 +263,14 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
             field.getAnnotation(classOf[HeaderParam]) != null || field.getAnnotation(classOf[PathParam]) != null ||
             field.getAnnotation(classOf[ApiParam]) != null) { 
             val param = new MutableParameter
-            param.dataType = field.getType.getName
-            Option (field.getAnnotation(classOf[ApiParam])) match {
-              case Some(annotation) => toAllowableValues(annotation.allowableValues)
-              case _ =>
+
+            if (!accountForEnum(param, field.getType))
+            {
+              param.dataType = field.getType.getName
+              Option (field.getAnnotation(classOf[ApiParam])) match {
+                case Some(annotation) => toAllowableValues(annotation.allowableValues)
+                case _ =>
+              }
             }
             val annotations = field.getAnnotations
             processParamAnnotations(param, annotations)
