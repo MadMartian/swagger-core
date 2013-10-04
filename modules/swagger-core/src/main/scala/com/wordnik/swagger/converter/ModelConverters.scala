@@ -64,7 +64,7 @@ object ModelConverters {
   }
 
   def addRecursive(model: Model, checkedNames: HashSet[String], output: HashMap[String, Model]): Unit = {
-    if(!checkedNames.contains(model.name)) {
+    if(!checkedNames.contains(model.id)) {
       val propertyNames = new HashSet[String]
       for((name, property) <- model.properties) {
         val propertyName = property.items match {

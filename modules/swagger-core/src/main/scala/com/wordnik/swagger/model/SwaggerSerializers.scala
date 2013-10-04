@@ -61,7 +61,8 @@ object SwaggerSerializers extends Serializers {
         if(prop.required) Some(name)
         else None
       }).flatten.toList
-      ("id" -> x.id) ~  
+      ("id" -> x.id) ~
+      ("name" -> x.name) ~
       ("description" -> x.description) ~
       ("required" -> (required.size match {
         case 0 => JNothing

@@ -111,7 +111,7 @@ object ModelUtil {
     if(shoudIncludeModel(typeRef)) {
       try{
         val cls = SwaggerContext.loadClass(typeRef)
-        (for(model <- ModelConverters.readAll(cls)) yield (model.name, model)).toMap
+        (for(model <- ModelConverters.readAll(cls)) yield (model.id, model)).toMap
       }
       catch {
         case e: ClassNotFoundException => Map()

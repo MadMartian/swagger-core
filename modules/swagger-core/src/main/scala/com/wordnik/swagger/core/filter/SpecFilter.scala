@@ -104,7 +104,7 @@ class SpecFilter {
           (for(subType <- m.subTypes) yield {
             val cls = SwaggerContext.loadClass(subType)
             for(model <- ModelConverters.readAll(cls)) yield {
-              model.name
+              model.id
             }
           }).flatten.toList
         }

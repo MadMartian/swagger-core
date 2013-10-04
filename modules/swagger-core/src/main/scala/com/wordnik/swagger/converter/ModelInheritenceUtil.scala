@@ -31,11 +31,11 @@ object ModelInheritenceUtil {
             for(model <- ModelConverters.readAll(cls))
               if(typeRef == model.qualifiedType) { // if baseModel == model loaded
                 LOGGER.debug("added baseModel " + typeRef)
-                baseModels += model.name -> model
+                baseModels += model.id -> model
               }
               else {  // if model is a dependency of the baseModel
                 LOGGER.debug("added dependentModel " + name)
-                dependentModels += model.name -> model
+                dependentModels += model.id -> model
               }
           }
           catch {
