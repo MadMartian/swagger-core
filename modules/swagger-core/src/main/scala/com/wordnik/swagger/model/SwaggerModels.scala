@@ -100,7 +100,13 @@ case class Operation (
   authorizations: List[String] = List.empty,
   parameters: List[Parameter] = List.empty,
   responseMessages: List[ResponseMessage] = List.empty,
+  examples : List[Example] = List.empty,
   `deprecated`: Option[String] = None)
+
+case class Example (
+  mediatype: String,
+  example: String
+)
 
 case class Parameter (
   name: String,

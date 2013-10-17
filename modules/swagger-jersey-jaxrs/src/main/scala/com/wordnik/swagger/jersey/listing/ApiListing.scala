@@ -32,6 +32,9 @@ object ApiListingCache {
   var _cache: Option[Map[String, ApiListing]] = None
 
   def listing(docRoot: String, app: Application, wc: WebConfig): Option[Map[String, ApiListing]] = {
+    // TODO: Temporarily disable cache for debugging purposes
+    _cache = None
+
     _cache.orElse{
       LOGGER.debug("loading cache")
       ClassReaders.reader.map{reader => 

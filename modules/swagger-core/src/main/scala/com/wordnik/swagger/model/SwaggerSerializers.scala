@@ -195,6 +195,7 @@ object SwaggerSerializers extends Serializers {
         (json \ "authorizations").extractOrElse(List()),
         (json \ "parameters").extract[List[Parameter]],
         (json \ "responseMessages").extract[List[ResponseMessage]],
+        (json \ "examples").extract[List[Example]],
         (json \ "deprecated").extractOpt[String]
       )
     }, {
@@ -236,6 +237,12 @@ object SwaggerSerializers extends Serializers {
       ("responseMessages" -> {
         x.responseMessages match {
           case e: List[ResponseMessage] if(e.size > 0) => Extraction.decompose(e)
+          case _ => JNothing
+        }
+      }) ~
+      ("examples" -> {
+        x.examples match {
+          case e: List[Example] if(e.size > 0) => Extraction.decompose(e)
           case _ => JNothing
         }
       }) ~
@@ -670,6 +677,7 @@ trait Serializers {
         (json \ "authorizations").extractOrElse(List()),
         (json \ "parameters").extract[List[Parameter]],
         (json \ "responseMessages").extract[List[ResponseMessage]],
+        (json \ "examples").extract[List[Example]],
         (json \ "deprecated").extractOpt[String]
       )
     }, {
@@ -708,6 +716,12 @@ trait Serializers {
       ("responseMessages" -> {
         x.responseMessages match {
           case e: List[ResponseMessage] if(e.size > 0) => Extraction.decompose(e)
+          case _ => JNothing
+        }
+      }) ~
+      ("examples" -> {
+        x.examples match {
+          case e: List[Example] if(e.size > 0) => Extraction.decompose(e)
           case _ => JNothing
         }
       }) ~

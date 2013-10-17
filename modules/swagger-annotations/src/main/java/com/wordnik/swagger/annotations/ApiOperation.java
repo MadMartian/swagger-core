@@ -16,6 +16,8 @@
 
 package com.wordnik.swagger.annotations;
 
+import com.wordnik.swagger.interfaces.IRequestEntityExampleGenerator;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -43,6 +45,9 @@ public @interface ApiOperation {
 
   /** currently not implemented in readers, reserved for future use */
   String tags() default "";
+
+  /** used to generate example entity code for body entity requests */
+  Class<? extends IRequestEntityExampleGenerator> exampleGenerator() default IRequestEntityExampleGenerator.class;
 
   /** the HTTP method, i.e GET, PUT, POST, DELETE, PATCH, OPTIONS */
   String httpMethod() default "";

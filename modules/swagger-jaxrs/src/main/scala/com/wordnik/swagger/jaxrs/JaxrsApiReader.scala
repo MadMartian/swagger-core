@@ -16,8 +16,12 @@ import java.lang.annotation.Annotation
 import javax.ws.rs._
 import javax.ws.rs.core.Context
 
+import reader.ResourceFactory
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ ListBuffer, HashMap, HashSet }
+import java.util
+import com.wordnik.swagger.interfaces.{ExampleInfo, IRequestEntityExampleGenerator}
+import collection.{immutable, mutable}
 
 trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
   private val LOGGER = LoggerFactory.getLogger(classOf[JaxrsApiReader])
@@ -78,8 +82,8 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
   }
 
   def parseOperation(
-    method: Method, 
-    apiOperation: ApiOperation, 
+    method: Method,
+    apiOperation: ApiOperation,
     apiResponses: List[ResponseMessage],
     isDeprecated: String,
     parentParams: List[Parameter],
@@ -131,13 +135,27 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       case Some(e) if(e != "") => e.split(",").map(_.trim).toList
       case _ => List()
     }
+    var examples : List[Example] = null
+    val exparamples : Map[String,String] = {
+      val cFactory: Class[_ <: IRequestEntityExampleGenerator] = apiOperation.exampleGenerator()
+      if (cFactory != classOf[IRequestEntityExampleGenerator]) {
+        val factory: IRequestEntityExampleGenerator = ResourceFactory.factory.acquireResource(cFactory)
+
+        val h = new immutable.HashMap[String,String]
+
+        h ++ (for (a <- factory.parameters(method.getDeclaringClass)) yield (a(0), a(1)))
+      } else
+        new immutable.HashMap[String,String]
+    }
+
     val params = parentParams ++ (for((annotations, paramType, genericParamType) <- (paramAnnotations, paramTypes, genericParamTypes).zipped.toList) yield {
       if(annotations.length > 0) {
         val param = new MutableParameter
 
         if (!accountForEnum(param, paramType))
           param.dataType = processDataType(paramType, genericParamType)
-        processParamAnnotations(param, annotations)
+        param.allowMultiple = paramType.isArray || paramType.isInstanceOf[util.Collection[_]]
+        processParamAnnotations(param, annotations, exparamples)
       }
       else /* If it doesn't have annotations, it must be a body parameter, and it's safe to assume that there will only
               ever be one of these in the sequence according to JSR-339 JAX-RS 2.0 section 3.3.2.1. */
@@ -146,6 +164,8 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
         param.dataType = paramType.getName
         param.name = TYPE_BODY
         param.paramType = TYPE_BODY
+
+        examples = acquireEntityExample(apiOperation, method.getDeclaringClass, Class.forName(param.dataType))
 
         Some(param.asParameter)
       }
@@ -159,10 +179,12 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
           (for(param <- e.value) yield {
             LOGGER.debug("processing " + param)
             val allowableValues = toAllowableValues(param.allowableValues)
+            if (param.paramType == TYPE_BODY || param.paramType == null)
+              examples = acquireEntityExample(apiOperation, method.getDeclaringClass, Class.forName(param.dataType))
             Parameter(
               param.name,
               Option(readString(param.value)),
-              Option(param.defaultValue).filter(_.trim.nonEmpty),
+              Option(param.defaultValue) orElse exparamples.get(param.name) filter(_.trim.nonEmpty),
               param.required,
               param.allowMultiple,
               param.dataType,
@@ -188,7 +210,33 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       authorizations,
       params ++ implicitParams,
       apiResponses,
+      examples,
       Option(isDeprecated))
+  }
+
+  def processParamAnnotations(param: MutableParameter, annotations: Array[Annotation], exparamples : Map[String, String]): Option[Parameter] = {
+    processParamAnnotations(param, annotations)
+      .map(e =>
+      param.defaultValue match {
+        case Some(j) if !j.isEmpty => e
+        case _ => {
+          param.defaultValue = exparamples.get(param.name)
+          param.asParameter
+        }
+      }
+    )
+  }
+
+  def acquireEntityExample(aApiOp: ApiOperation, cResourceClass: Class[_], cDataType: Class[_]): List[Example] = {
+    val cFactory: Class[_ <: IRequestEntityExampleGenerator] = aApiOp.exampleGenerator()
+    if (cFactory != classOf[IRequestEntityExampleGenerator]) {
+      val factory: IRequestEntityExampleGenerator = ResourceFactory.factory.acquireResource(cFactory)
+      (
+        for (e <- factory.entity(cResourceClass, cDataType))
+        yield Example(e.mediatype, e.example)
+        ).toList
+    } else
+      List.empty
   }
 
   def readMethod(method: Method, parentParams: List[Parameter], parentMethods: ListBuffer[Method]) = {
@@ -271,7 +319,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
               }
             }
             val annotations = field.getAnnotations
-            processParamAnnotations(param, annotations)
+            processParamAnnotations(param, annotations) // TODO: Support example values for parent parameters
           }
           else None
         }

@@ -110,6 +110,7 @@ class ServletReader extends ClassReader with ClassReaderUtils {
             authorizations, // authorizations
             parameters, // params
             apiResponses, // errors
+            List.empty, // No examples allowed
             None)
         }
       }

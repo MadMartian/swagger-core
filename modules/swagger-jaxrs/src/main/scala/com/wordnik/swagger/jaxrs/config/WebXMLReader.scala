@@ -7,6 +7,8 @@ import com.wordnik.swagger.core.filter.SwaggerSpecFilter
 import org.slf4j.LoggerFactory
 
 import javax.servlet._
+import com.wordnik.swagger.jaxrs.IJaxrsResourceFactory
+import com.wordnik.swagger.jaxrs.reader.ResourceFactory
 
 class WebXMLReader(implicit servletConfig: ServletConfig) extends SwaggerConfig {
   private val LOGGER = LoggerFactory.getLogger(classOf[WebXMLReader])
@@ -37,5 +39,16 @@ class WebXMLReader(implicit servletConfig: ServletConfig) extends SwaggerConfig 
       }
     }
     case _ =>
+  }
+  servletConfig.getInitParameter("swagger.jaxrs.factory") match {
+    case e: String if !e.isEmpty => {
+      try
+      {
+        ResourceFactory.factory = SwaggerContext.loadClass(e).newInstance.asInstanceOf[IJaxrsResourceFactory]
+        LOGGER.debug("set swagger.context.factory to " + e);
+      } catch {
+        case ex: Exception => LOGGER.error("failed to load resource factory " + e, ex);
+      }
+    }
   }
 }
