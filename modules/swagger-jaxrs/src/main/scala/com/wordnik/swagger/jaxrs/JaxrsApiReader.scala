@@ -172,7 +172,6 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     }).flatten.toList
 
     val implicitParams = {
-      val returnType = method.getReturnType
       LOGGER.debug("checking for implicits")
       Option(method.getAnnotation(classOf[ApiImplicitParams])) match {
         case Some(e) => {
@@ -326,12 +325,16 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       ).flatten.toList
 
       for(method <- cls.getMethods) {
-        val returnType = method.getReturnType
         val path = method.getAnnotation(classOf[Path]) match {
           case e: Path => e.value()
           case _ => ""
         }
         val endpoint = parentPath + api.value + pathFromMethod(method)
+        val aApiOp: ApiOperation = method.getAnnotation(classOf[ApiOperation])
+        val returnType = aApiOp match {
+          case null => method.getReturnType
+          case _ => aApiOp.response()
+        }
         Option(returnType.getAnnotation(classOf[Api])) match {
           case Some(e) => {
             val root = docRoot + api.value + pathFromMethod(method)
@@ -340,7 +343,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
             parentMethods -= method
           }
           case _ => {
-            if(method.getAnnotation(classOf[ApiOperation]) != null) {
+            if(aApiOp != null) {
               val op = readMethod(method, parentParams, parentMethods)
               appendOperation(endpoint, path, op, operations)
             }
