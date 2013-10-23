@@ -75,7 +75,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     if (cls.isEnum)
     {
       param.allowableValues = AllowableListValues(cls.getEnumConstants.map(_.toString).toList)
-      param.dataType = "string"
+      param.dataType = "enum"
     }
 
     cls.isEnum
@@ -405,7 +405,8 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     param.defaultValue = Option(readString(annotation.defaultValue))
 
     try {
-      param.allowableValues = toAllowableValues(annotation.allowableValues)
+      if (!annotation.allowableValues().isEmpty)
+        param.allowableValues = toAllowableValues(annotation.allowableValues)
     } catch {
       case e: Exception =>
         LOGGER.error("Allowable values annotation problem in method for parameter " + param.name)
