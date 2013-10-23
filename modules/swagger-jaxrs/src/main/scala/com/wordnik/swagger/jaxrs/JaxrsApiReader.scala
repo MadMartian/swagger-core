@@ -22,6 +22,7 @@ import scala.collection.mutable.{ ListBuffer, HashMap, HashSet }
 import java.util
 import com.wordnik.swagger.interfaces.{ExampleInfo, IRequestEntityExampleGenerator}
 import collection.{immutable, mutable}
+import java.lang.ClassNotFoundException
 
 trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
   private val LOGGER = LoggerFactory.getLogger(classOf[JaxrsApiReader])
@@ -135,7 +136,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       case Some(e) if(e != "") => e.split(",").map(_.trim).toList
       case _ => List()
     }
-    var examples : List[Example] = null
+
     val exparamples : Map[String,String] = {
       val cFactory: Class[_ <: IRequestEntityExampleGenerator] = apiOperation.exampleGenerator()
       if (cFactory != classOf[IRequestEntityExampleGenerator]) {
@@ -165,8 +166,6 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
         param.name = TYPE_BODY
         param.paramType = TYPE_BODY
 
-        examples = acquireEntityExample(apiOperation, method.getDeclaringClass, Class.forName(param.dataType))
-
         Some(param.asParameter)
       }
     }).flatten.toList
@@ -178,8 +177,6 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
           (for(param <- e.value) yield {
             LOGGER.debug("processing " + param)
             val allowableValues = toAllowableValues(param.allowableValues)
-            if (param.paramType == TYPE_BODY || param.paramType == null)
-              examples = acquireEntityExample(apiOperation, method.getDeclaringClass, Class.forName(param.dataType))
             Parameter(
               param.name,
               Option(readString(param.value)),
@@ -196,6 +193,22 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       }
     }
 
+    val combinedParams = params ++ implicitParams
+    val examples : List[Example] =
+      combinedParams.find(p => p.paramType == TYPE_BODY) match
+      {
+         case Some(param) if ! param.allowMultiple => {
+           try
+           {
+            acquireEntityExample(apiOperation, method.getDeclaringClass, Class.forName(param.dataType))
+           } catch
+           {
+             case e: ClassNotFoundException => List.empty
+           }
+         }
+         case None | _ => List.empty
+      }
+
     Operation(
       parseHttpMethod(method, apiOperation),
       apiOperation.value,
@@ -207,7 +220,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       consumes,
       protocols,
       authorizations,
-      params ++ implicitParams,
+      combinedParams,
       apiResponses,
       examples,
       Option(isDeprecated))
