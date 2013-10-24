@@ -25,6 +25,7 @@ import scala.collection.mutable.LinkedHashMap
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
+import com.sun.jersey.spi.inject.Injectable
 
 object ApiListingCache {
   private val LOGGER = LoggerFactory.getLogger(ApiListingCache.getClass)
@@ -43,6 +44,24 @@ object ApiListingCache {
             case scanner: JaxrsScanner => scanner.asInstanceOf[JaxrsScanner].classesFromContext(app, null)
             case _ => List()
           }
+
+          // For each resource, scan for injectable types and collect any parameters defined on them.
+          val readerJAXRS = reader.asInstanceOf[JaxrsApiReader]
+          readerJAXRS.topparams =
+            (List[Class[_]]() /: classes) ((a, b) =>
+              {
+                b match {
+                  case head if classOf[Injectable[_]] isAssignableFrom head =>
+                    val `type` = head.getMethod("getValue").getReturnType
+                    if (`type`.getAnnotation(classOf[Api]) != null)
+                      a :+ `type`
+                    else
+                      a
+                  case _ =>
+                    a
+                }
+              }) map (top => readerJAXRS.extractClassLevelParams(top)) flatten
+
           // For each top level resource, parse it and look for swagger annotations.
           val listings = (for(cls <- classes) yield reader.read(docRoot, cls, ConfigFactory.config)).flatten.toList
           _cache = Some((listings.map(m => {

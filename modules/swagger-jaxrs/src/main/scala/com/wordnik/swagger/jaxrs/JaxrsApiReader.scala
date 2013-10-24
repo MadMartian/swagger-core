@@ -28,6 +28,8 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
   private val LOGGER = LoggerFactory.getLogger(classOf[JaxrsApiReader])
   val GenericTypeMapper = "([a-zA-Z\\.]*)<([a-zA-Z0-9\\.\\,\\s]*)>".r
 
+  var topparams : List[Parameter] = List.empty
+
   // decorates a Parameter based on annotations, returns None if param should be ignored
   def processParamAnnotations(mutable: MutableParameter, paramAnnotations: Array[Annotation]): Option[Parameter]
 
@@ -314,28 +316,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
         case _ => None
       }
       // look for method-level annotated properties
-      val parentParams: List[Parameter] = (for(field <- getAllFields(cls)) 
-        yield {
-          // only process fields with @ApiParam, @QueryParam, @HeaderParam, @PathParam
-          if(field.getAnnotation(classOf[QueryParam]) != null || field.getAnnotation(classOf[HeaderParam]) != null ||
-            field.getAnnotation(classOf[HeaderParam]) != null || field.getAnnotation(classOf[PathParam]) != null ||
-            field.getAnnotation(classOf[ApiParam]) != null) { 
-            val param = new MutableParameter
-
-            if (!accountForEnum(param, field.getType))
-            {
-              param.dataType = field.getType.getName
-              Option (field.getAnnotation(classOf[ApiParam])) match {
-                case Some(annotation) => toAllowableValues(annotation.allowableValues)
-                case _ =>
-              }
-            }
-            val annotations = field.getAnnotations
-            processParamAnnotations(param, annotations) // TODO: Support example values for parent parameters
-          }
-          else None
-        }
-      ).flatten.toList
+      val parentParams: List[Parameter] = extractClassLevelParams(cls)
 
       for(method <- cls.getMethods) {
         val path = method.getAnnotation(classOf[Path]) match {
@@ -357,7 +338,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
           }
           case _ => {
             if(aApiOp != null) {
-              val op = readMethod(method, parentParams, parentMethods)
+              val op = readMethod(method, topparams ++ parentParams, parentMethods)
               appendOperation(endpoint, path, op, operations)
             }
           }
@@ -398,6 +379,31 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     else None
   }
 
+  def extractClassLevelParams(cls: Class[_]): List[Parameter] =
+  {
+    (for (field <- getAllFields(cls))
+    yield {
+      // only process fields with @ApiParam, @QueryParam, @HeaderParam, @PathParam
+      if (field.getAnnotation(classOf[QueryParam]) != null || field.getAnnotation(classOf[HeaderParam]) != null ||
+        field.getAnnotation(classOf[HeaderParam]) != null || field.getAnnotation(classOf[PathParam]) != null ||
+        field.getAnnotation(classOf[ApiParam]) != null) {
+        val param = new MutableParameter
+
+        if (!accountForEnum(param, field.getType)) {
+          param.dataType = field.getType.getName
+          Option(field.getAnnotation(classOf[ApiParam])) match {
+            case Some(annotation) => toAllowableValues(annotation.allowableValues)
+            case _ =>
+          }
+        }
+        val annotations = field.getAnnotations
+        processParamAnnotations(param, annotations) // TODO: Support example values for parent parameters
+      }
+      else None
+    }
+      ).flatten.toList
+  }
+
   def getAllFields(cls: Class[_]): List[Field] = {
     var fields = cls.getDeclaredFields().toList;                 
     if (cls.getSuperclass() != null) {
@@ -415,7 +421,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
   def parseApiParamAnnotation(param: MutableParameter, annotation: ApiParam) {
     param.name = readString(annotation.name, param.name)
     param.description = Option(readString(annotation.value))
-    param.defaultValue = Option(readString(annotation.defaultValue))
+    param.defaultValue = Option(readString(annotation.defaultValue, param.defaultValue.getOrElse(null)))
 
     try {
       if (!annotation.allowableValues().isEmpty)
