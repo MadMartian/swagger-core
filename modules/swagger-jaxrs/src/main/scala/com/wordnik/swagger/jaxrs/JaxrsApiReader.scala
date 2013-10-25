@@ -190,7 +190,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
             Parameter(
               param.name,
               Option(readString(param.value)),
-              Option(param.defaultValue) orElse exparamples.get(param.name) filter(_.trim.nonEmpty),
+              exparamples.get(param.name) orElse Option(param.defaultValue) filter(_.trim.nonEmpty),
               param.required,
               param.allowMultiple,
               param.dataType,
@@ -242,12 +242,12 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
   def processParamAnnotations(param: MutableParameter, annotations: Array[Annotation], exparamples : Map[String, String]): Option[Parameter] = {
     processParamAnnotations(param, annotations)
       .map(e =>
-      param.defaultValue match {
-        case Some(j) if !j.isEmpty => e
-        case _ => {
-          param.defaultValue = exparamples.get(param.name)
+      exparamples.get(param.name) match {
+        case Some(j) if !j.isEmpty => {
+          param.defaultValue = Some(j)
           param.asParameter
         }
+        case _ => e
       }
     )
   }
