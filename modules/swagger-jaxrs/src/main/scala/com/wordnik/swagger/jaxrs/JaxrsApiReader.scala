@@ -139,24 +139,37 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       case _ => List()
     }
 
+    val exgen: Option[Class[_ <: IRequestEntityExampleGenerator]]
+    =
+      (parentMethods :+ method).filter(m => m.getAnnotation(classOf[ApiOperation]) match {
+        case null => false
+        case x if x.exampleGenerator() != classOf[IRequestEntityExampleGenerator] => true
+        case _ => false
+      }) match {
+        case x if !x.isEmpty => Some(x.head.getAnnotation(classOf[ApiOperation]).exampleGenerator())
+        case _ => None
+      }
+
     val exparamples : Map[String,String] = {
-      val cFactory: Class[_ <: IRequestEntityExampleGenerator] = apiOperation.exampleGenerator()
-      if (cFactory != classOf[IRequestEntityExampleGenerator]) {
-        try
-        {
-          val factory: IRequestEntityExampleGenerator = ResourceFactory.factory.acquireResource(cFactory)
+      exgen match
+      {
+        case Some(generator) => {
+          try
+          {
+            val factory: IRequestEntityExampleGenerator = ResourceFactory.factory.acquireResource(generator)
 
-          val h = new immutable.HashMap[String,String]
+            val h = new immutable.HashMap[String,String]
 
-          h ++ (for (a <- factory.parameters(method.getDeclaringClass)) yield (a(0), a(1)))
-        } catch {
-          case e: Exception => {
-            LOGGER.debug("Error! could not generate example! ", e)
-            Map.empty
+            h ++ (for (a <- factory.parameters(method.getDeclaringClass)) yield (a(0), a(1)))
+          } catch {
+            case e: Exception => {
+              LOGGER.debug("Error! could not generate example! ", e)
+              Map.empty
+            }
           }
         }
-      } else
-        Map.empty
+        case _ => Map.empty
+      }
     }
 
     val params = parentParams ++ (for((annotations, paramType, genericParamType) <- (paramAnnotations, paramTypes, genericParamTypes).zipped.toList) yield {
@@ -205,12 +218,12 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
 
     val combinedParams = params ++ implicitParams
     val examples : List[Example] =
-      combinedParams.find(p => p.paramType == TYPE_BODY) match
+      (combinedParams.find(p => p.paramType == TYPE_BODY), exgen) match
       {
-         case Some(param) if ! param.allowMultiple => {
+         case (Some(param), Some(generator)) if ! param.allowMultiple => {
            try
            {
-            acquireEntityExample(apiOperation, method.getDeclaringClass, Class.forName(param.dataType))
+            acquireEntityExample(generator, method.getDeclaringClass, Class.forName(param.dataType))
            } catch
            {
              case e: Exception => {
@@ -219,7 +232,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
              }
            }
          }
-         case None | _ => List.empty
+         case _ => List.empty
       }
 
     Operation(
@@ -252,10 +265,9 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     )
   }
 
-  def acquireEntityExample(aApiOp: ApiOperation, cResourceClass: Class[_], cDataType: Class[_]): List[Example] = {
-    val cFactory: Class[_ <: IRequestEntityExampleGenerator] = aApiOp.exampleGenerator()
-    if (cFactory != classOf[IRequestEntityExampleGenerator]) {
-      val factory: IRequestEntityExampleGenerator = ResourceFactory.factory.acquireResource(cFactory)
+  def acquireEntityExample(generator: Class[_ <: IRequestEntityExampleGenerator], cResourceClass: Class[_], cDataType: Class[_]): List[Example] = {
+    if (generator != classOf[IRequestEntityExampleGenerator]) {
+      val factory: IRequestEntityExampleGenerator = ResourceFactory.factory.acquireResource(generator)
       (
         for (e <- factory.entity(cResourceClass, cDataType))
         yield Example(e.mediatype, e.example)
