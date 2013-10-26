@@ -160,7 +160,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
 
             val h = new immutable.HashMap[String,String]
 
-            h ++ (for (a <- factory.parameters(method.getDeclaringClass)) yield (a(0), a(1)))
+            h ++ (for (a <- factory.parameters(method.getDeclaringClass, method)) yield (a(0), a(1)))
           } catch {
             case e: Exception => {
               LOGGER.debug("Error! could not generate example! ", e)
@@ -223,7 +223,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
          case (Some(param), Some(generator)) if ! param.allowMultiple => {
            try
            {
-            acquireEntityExample(generator, method.getDeclaringClass, Class.forName(param.dataType))
+            acquireEntityExample(generator, method.getDeclaringClass, method, Class.forName(param.dataType))
            } catch
            {
              case e: Exception => {
@@ -265,11 +265,11 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     )
   }
 
-  def acquireEntityExample(generator: Class[_ <: IRequestEntityExampleGenerator], cResourceClass: Class[_], cDataType: Class[_]): List[Example] = {
+  def acquireEntityExample(generator: Class[_ <: IRequestEntityExampleGenerator], cResourceClass: Class[_], mMethod: Method, cDataType: Class[_]): List[Example] = {
     if (generator != classOf[IRequestEntityExampleGenerator]) {
       val factory: IRequestEntityExampleGenerator = ResourceFactory.factory.acquireResource(generator)
       (
-        for (e <- factory.entity(cResourceClass, cDataType))
+        for (e <- factory.entity(cResourceClass, mMethod, cDataType))
         yield Example(e.mediatype, e.example)
         ).toList
     } else
