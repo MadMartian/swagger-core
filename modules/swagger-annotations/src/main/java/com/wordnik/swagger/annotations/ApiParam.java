@@ -38,7 +38,7 @@ public @interface ApiParam {
   String defaultValue() default "";
 
   /** Description of values this endpoint accepts */
-  String allowableValues() default "";
+  ApiAllowableValues allowableValues() default @ApiAllowableValues();
 
   /** specifies if the parameter is required or not */
   boolean required() default false;

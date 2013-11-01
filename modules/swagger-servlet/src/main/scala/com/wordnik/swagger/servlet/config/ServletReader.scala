@@ -55,9 +55,9 @@ class ServletReader extends ClassReader with ClassReaderUtils {
                   Option(param.defaultValue).filter(_.trim.nonEmpty),
                   param.required,
                   param.allowMultiple,
-                  param.dataType,
+                  param.dataType.getName,
                   allowableValues,
-                  param.paramType,
+                  param.paramType.name(),
                   Option(param.access).filter(_.trim.nonEmpty))
               }).toList
             }

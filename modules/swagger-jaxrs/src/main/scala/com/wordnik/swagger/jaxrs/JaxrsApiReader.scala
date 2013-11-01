@@ -206,9 +206,9 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
               exparamples.get(param.name) orElse Option(param.defaultValue) filter(_.trim.nonEmpty),
               param.required,
               param.allowMultiple,
-              param.dataType,
+              param.dataType.getName,
               allowableValues,
-              param.paramType,
+              param.paramType.name(),
               Option(param.access).filter(_.trim.nonEmpty))
           }).toList
         }
@@ -447,8 +447,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
     param.defaultValue = Option(readString(annotation.defaultValue, param.defaultValue.getOrElse(null)))
 
     try {
-      if (!annotation.allowableValues().isEmpty)
-        param.allowableValues = toAllowableValues(annotation.allowableValues)
+      param.allowableValues = toAllowableValues(annotation.allowableValues, param.allowableValues)
     } catch {
       case e: Exception =>
         LOGGER.error("Allowable values annotation problem in method for parameter " + param.name)

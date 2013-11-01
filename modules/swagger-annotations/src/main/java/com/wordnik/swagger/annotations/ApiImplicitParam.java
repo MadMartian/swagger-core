@@ -16,6 +16,8 @@
 
 package com.wordnik.swagger.annotations;
 
+import com.wordnik.swagger.interfaces.ParamType;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -39,7 +41,7 @@ public @interface ApiImplicitParam {
   String defaultValue() default "";
 
   /** Description of values this endpoint accepts */
-  String allowableValues() default "";
+  ApiAllowableValues allowableValues() default @ApiAllowableValues();
 
   /** specifies if the parameter is required or not */
   boolean required() default false;
@@ -55,8 +57,8 @@ public @interface ApiImplicitParam {
   boolean allowMultiple() default false;
 
   /** manually set the dataType */
-  String dataType() default "";
+  Class<?> dataType() default Object.class;
 
   /** manually set the param type, i.e. query, path, etc. */
-  String paramType() default "";
+  ParamType paramType() default ParamType.auto;
 }

@@ -3,7 +3,7 @@ package com.wordnik.swagger.converter
 import com.wordnik.swagger.model._
 import com.wordnik.swagger.core.{ SwaggerSpec, SwaggerTypes }
 import com.wordnik.swagger.core.util.TypeUtil
-import com.wordnik.swagger.annotations.ApiModelProperty
+import com.wordnik.swagger.annotations.{ApiAllowableValues, ApiModelProperty}
 
 import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty}
 
@@ -16,8 +16,9 @@ import java.lang.annotation.Annotation
 import javax.xml.bind.annotation._
 
 import scala.collection.mutable.{ LinkedHashMap, ListBuffer, HashSet, HashMap }
+import com.wordnik.swagger.reader.ClassReaderUtils
 
-class ModelPropertyParser(cls: Class[_]) (implicit properties: LinkedHashMap[String, ModelProperty]) {
+class ModelPropertyParser (cls: Class[_]) (implicit properties: LinkedHashMap[String, ModelProperty]) extends ClassReaderUtils {
   private val LOGGER = LoggerFactory.getLogger(classOf[ModelPropertyParser])
 
   val processedFields = new ListBuffer[String]
@@ -210,7 +211,7 @@ class ModelPropertyParser(cls: Class[_]) (implicit properties: LinkedHashMap[Str
         case e: ApiModelProperty => {
           description = readString(e.value)
           notes = readString(e.notes)
-          paramType = readString(e.dataType)
+          paramType = e.dataType.getName
           if(e.required) required = true
           if(e.position != 0) position = e.position
           isDocumented = true
@@ -282,43 +283,6 @@ class ModelPropertyParser(cls: Class[_]) (implicit properties: LinkedHashMap[Str
           throw t
         }
       }
-    }
-  }
-
-  def toAllowableValues(csvString: String, paramType: String = null): AllowableValues = {
-    if (csvString.toLowerCase.startsWith("range[")) {
-      val ranges = csvString.substring(6, csvString.length() - 1).split(",")
-      toAllowableRange(ranges, csvString)
-    } else if (csvString.toLowerCase.startsWith("rangeexclusive[")) {
-      val ranges = csvString.substring(15, csvString.length() - 1).split(",")
-      toAllowableRange(ranges, csvString)
-    } else {
-      if (csvString == null || csvString.length == 0) {
-        AnyAllowableValues
-      } else {
-        val params = csvString.split(",").toList
-        AllowableListValues(params)
-      }
-    }
-  }
-
-  def toAllowableRange(ranges: Array[String], inputStr: String): AllowableValues = {
-    if (ranges.size < 2) {
-      LOGGER.error("invalid range input")
-      AnyAllowableValues
-    }
-    else {
-      val min = ranges(0) match {
-        case e: String if(e == positiveInfinity) => Float.PositiveInfinity
-        case e: String if(e == negativeInfinity) => Float.NegativeInfinity
-        case e: String => e.toFloat
-      }
-      val max = ranges(1) match {
-        case e: String if(e == positiveInfinity) => Float.PositiveInfinity
-        case e: String if(e == negativeInfinity) => Float.NegativeInfinity
-        case e: String => e.toFloat
-      }
-      AllowableRangeValues(min.toString, max.toString)
     }
   }
 

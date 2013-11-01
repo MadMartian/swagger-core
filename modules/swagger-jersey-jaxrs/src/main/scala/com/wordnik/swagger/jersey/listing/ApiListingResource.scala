@@ -6,7 +6,7 @@ import com.wordnik.swagger.jersey._
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
 
-@Path("/api-docs")
-@Api("/api-docs")
+@Path("/model.sw")
+@Api("/model.sw")
 @Produces(Array(MediaType.APPLICATION_JSON))
 class ApiListingResourceJSON extends ApiListingResource

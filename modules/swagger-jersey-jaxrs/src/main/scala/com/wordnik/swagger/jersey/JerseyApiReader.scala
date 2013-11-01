@@ -98,6 +98,14 @@ class JerseyApiReader extends JaxrsApiReader {
         mutable.paramType = TYPE_BODY
         mutable.name = TYPE_BODY
       }
+      mutable.dataType match {
+        case "java.io.InputStream" => mutable.dataType = "File"
+        case "com.sun.jersey.multipart.MultiPart" => {
+          mutable.dataType = "List[File]"
+          mutable.allowMultiple = true
+        }
+        case _ =>
+      }
       Some(mutable.asParameter)
     }
     else None

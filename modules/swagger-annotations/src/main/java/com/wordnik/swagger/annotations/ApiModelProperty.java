@@ -38,7 +38,7 @@ public @interface ApiModelProperty {
    *
    * @return the allowable values
    */
-  String allowableValues() default "";
+  ApiAllowableValues allowableValues() default @ApiAllowableValues();
 
   /** 
    * specify an optional access value for filtering in a Filter 
@@ -54,7 +54,7 @@ public @interface ApiModelProperty {
    * The dataType. See the documentation for the supported datatypes. If the data type is a custom object, set
    * it's name, or nothing. In case of an enum use 'string' and allowableValues for the enum constants.
    */
-  String dataType() default "";
+  Class<?> dataType() default Object.class;
 
   /**
    * Whether or not the property is required, defaults to false.
