@@ -72,12 +72,6 @@ class JerseyApiReader extends JaxrsApiReader {
         }
         case e: FormDataParam => {
           mutable.dataType match {
-            case "java.io.InputStream" => {
-              mutable.name = readString(e.value, mutable.name)
-              mutable.paramType = "body"
-              mutable.dataType = "File"
-            }
-            case "file" => 
             case "com.sun.jersey.core.header.FormDataContentDisposition" => shouldIgnore = true
             case _ => {
               mutable.name = readString(e.value, mutable.name)
@@ -90,7 +84,12 @@ class JerseyApiReader extends JaxrsApiReader {
         }
         case e: InjectParam => shouldIgnore = true
         case e: Context => shouldIgnore = true
-        case _ =>
+        case _ => {
+          mutable.dataType match {
+            case "com.sun.jersey.multipart.MultiPart" => shouldIgnore = true
+            case _ =>
+          }
+        }
       }
     }
     if(!shouldIgnore) {
@@ -99,11 +98,7 @@ class JerseyApiReader extends JaxrsApiReader {
         mutable.name = TYPE_BODY
       }
       mutable.dataType match {
-        case "java.io.InputStream" => mutable.dataType = "File"
-        case "com.sun.jersey.multipart.MultiPart" => {
-          mutable.dataType = "List[File]"
-          mutable.allowMultiple = true
-        }
+        case "java.io.InputStream" => mutable.paramType = TYPE_FILE
         case _ =>
       }
       Some(mutable.asParameter)

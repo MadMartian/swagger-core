@@ -11,6 +11,7 @@ object ApiValues {
 
     val TYPE_PATH = "path"
     val TYPE_BODY = "body"
+    val TYPE_FILE = "file"
     val TYPE_QUERY = "query"
     val TYPE_MATRIX = "matrix"
     val TYPE_HEADER = "header"

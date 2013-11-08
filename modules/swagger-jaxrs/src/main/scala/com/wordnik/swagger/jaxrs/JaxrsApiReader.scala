@@ -216,7 +216,14 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       }
     }
 
-    val combinedParams = params ++ implicitParams
+    // Implicit parameter definitions may override regular ones
+    val combinedParams = (params :\ implicitParams)((x,y) => {
+      y exists (p2 => x.name == p2.name) match {
+        case true => y
+        case false => x +: y
+      }
+    })
+
     val examples : List[Example] =
       (combinedParams.find(p => p.paramType == TYPE_BODY), exgen) match
       {

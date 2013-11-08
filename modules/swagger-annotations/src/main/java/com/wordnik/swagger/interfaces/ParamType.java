@@ -36,5 +36,6 @@ public enum ParamType
     matrix,
     header,
     form,
+    file,
     cookie
 }

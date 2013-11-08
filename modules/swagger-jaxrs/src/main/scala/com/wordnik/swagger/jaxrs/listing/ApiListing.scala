@@ -37,7 +37,7 @@ object ApiListingCache {
       ClassReaders.reader.map{reader => 
         ScannerFactory.scanner.map(scanner => {
           val classes = scanner match {
-            case scanner: JaxrsScanner => scanner.asInstanceOf[JaxrsScanner].classesFromContext(app, null)
+            case scanner: JaxrsScanner => scanner.classesFromContext(app, null)
             case _ => List()
           }
           // For each top level resource, parse it and look for swagger annotations.

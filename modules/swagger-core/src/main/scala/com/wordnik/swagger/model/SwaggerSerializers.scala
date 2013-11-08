@@ -376,6 +376,7 @@ object SwaggerSerializers extends Serializers {
       ("description" -> x.description) ~
       ("defaultValue" -> x.defaultValue) ~
       ("required" -> x.required) ~
+      ("allowMultiple" -> x.allowMultiple) ~
       toJsonSchema("type", x.dataType) ~
       ("paramType" -> x.paramType) ~
       ("paramAccess" -> x.paramAccess)
