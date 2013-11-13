@@ -7,8 +7,8 @@ import com.wordnik.swagger.core.filter.SwaggerSpecFilter
 import org.slf4j.LoggerFactory
 
 import javax.servlet._
-import com.wordnik.swagger.jaxrs.IJaxrsResourceFactory
 import com.wordnik.swagger.jaxrs.reader.ResourceFactory
+import com.wordnik.swagger.interfaces.IJaxrsResourceFactory
 
 class WebXMLReader(implicit servletConfig: ServletConfig) extends SwaggerConfig {
   private val LOGGER = LoggerFactory.getLogger(classOf[WebXMLReader])

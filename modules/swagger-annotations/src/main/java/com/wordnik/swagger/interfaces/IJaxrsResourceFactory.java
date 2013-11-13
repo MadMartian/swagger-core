@@ -1,4 +1,4 @@
-package com.wordnik.swagger.jaxrs;
+package com.wordnik.swagger.interfaces;
 
 public interface IJaxrsResourceFactory
 {
