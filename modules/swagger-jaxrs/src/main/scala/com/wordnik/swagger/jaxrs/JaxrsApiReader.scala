@@ -20,9 +20,14 @@ import reader.ResourceFactory
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ ListBuffer, HashMap, HashSet }
 import java.util
-import com.wordnik.swagger.interfaces.{ExampleInfo, IRequestEntityExampleGenerator}
+import com.wordnik.swagger.interfaces.{Cardinality, ExampleInfo, IRequestEntityExampleGenerator}
 import collection.{immutable, mutable}
 import java.lang.ClassNotFoundException
+
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import scala.reflect.api.Types
+
+import com.wordnik.swagger.interfaces.Cardinality.{auto, singular, multiple}
 
 trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
   private val LOGGER = LoggerFactory.getLogger(classOf[JaxrsApiReader])
@@ -178,7 +183,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
 
         if (!accountForEnum(param, paramType))
           param.dataType = processDataType(paramType, genericParamType)
-        param.allowMultiple = paramType.isArray || paramType.isInstanceOf[util.Collection[_]]
+        param.allowMultiple = Cardinality.isMultiple(paramType)
         processParamAnnotations(param, annotations, exparamples)
       }
       else /* If it doesn't have annotations, it must be a body parameter, and it's safe to assume that there will only
@@ -205,7 +210,11 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
               Option(readString(param.value)),
               exparamples.get(param.name) orElse Option(param.defaultValue) filter(_.trim.nonEmpty),
               param.required,
-              param.allowMultiple,
+              param.cardinality match {
+                case auto => Cardinality.isMultiple(param.dataType)
+                case singular => false
+                case multiple => true
+              },
               param.dataType.getName,
               allowableValues,
               param.paramType.name(),
@@ -488,7 +497,12 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
         LOGGER.error("Allowable values annotation problem in method for parameter " + param.name)
     }
     param.required = annotation.required
-    param.allowMultiple = annotation.allowMultiple
+    param.allowMultiple = annotation.cardinality match
+    {
+      case auto => param.allowMultiple
+      case singular => false
+      case multiple => true
+    }
     param.paramAccess = Option(readString(annotation.access))
   }
 

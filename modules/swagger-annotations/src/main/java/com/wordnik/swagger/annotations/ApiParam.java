@@ -16,6 +16,8 @@
 
 package com.wordnik.swagger.annotations;
 
+import com.wordnik.swagger.interfaces.Cardinality;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -51,5 +53,5 @@ public @interface ApiParam {
   String access() default "";
 
   /** specifies whether or not the parameter can have multiple values provided */
-  boolean allowMultiple() default false;
+  Cardinality cardinality() default Cardinality.auto;
 }

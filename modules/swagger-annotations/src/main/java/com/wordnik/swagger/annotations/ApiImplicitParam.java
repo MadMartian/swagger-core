@@ -16,6 +16,7 @@
 
 package com.wordnik.swagger.annotations;
 
+import com.wordnik.swagger.interfaces.Cardinality;
 import com.wordnik.swagger.interfaces.ParamType;
 
 import java.lang.annotation.ElementType;
@@ -54,7 +55,7 @@ public @interface ApiImplicitParam {
   String access() default "";
 
   /** specifies whether or not the parameter can have multiple values provided */
-  boolean allowMultiple() default false;
+  Cardinality cardinality() default Cardinality.auto;
 
   /** manually set the dataType */
   Class<?> dataType() default Object.class;

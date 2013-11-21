@@ -19,6 +19,7 @@ import javax.ws.rs.core.Context
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ ListBuffer, HashMap, HashSet }
+import com.wordnik.swagger.interfaces.Cardinality
 
 class ServletReader extends ClassReader with ClassReaderUtils {
   private val LOGGER = LoggerFactory.getLogger(classOf[ServletReader])
@@ -54,7 +55,11 @@ class ServletReader extends ClassReader with ClassReaderUtils {
                   None,
                   Option(param.defaultValue).filter(_.trim.nonEmpty),
                   param.required,
-                  param.allowMultiple,
+                  param.cardinality match {
+                    case auto => Cardinality.isMultiple(param.dataType)
+                    case singular => false
+                    case multiple => true
+                  },
                   param.dataType.getName,
                   allowableValues,
                   param.paramType.name(),
