@@ -224,6 +224,13 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       }
     })
 
+    val sortedParams = combinedParams.sortWith((x, y) => {
+      if (x.paramType != y.paramType)
+        x.paramType < y.paramType
+      else
+        x.name < y.name
+    })
+
     val examples : List[Example] =
       (combinedParams.find(p => p.paramType == TYPE_BODY), exgen) match
       {
@@ -253,7 +260,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       consumes,
       protocols,
       authorizations,
-      combinedParams,
+      sortedParams,
       apiResponses,
       examples,
       Option(isDeprecated))
@@ -377,10 +384,31 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       // sort them by min position in the operations
       val s = (for(op <- operations) yield {
         (op, op._3.map(_.position).toList.min)
-      }).sortWith(_._2 < _._2).toList
+      }).sortWith((x, y) => {
+        if (x._2 != y._2)
+          x._2 < y._2
+        else
+          x._1._1 < y._1._1
+      }).toList
       val orderedOperations = new ListBuffer[Tuple3[String, String, ListBuffer[Operation]]]
       s.foreach(op => {
-        val ops = op._1._3.sortWith(_.position < _.position)
+        val ops = op._1._3.sortWith((x, y) => {
+
+          val fnMethRank = (x: String) => x toUpperCase match {
+            case "GET" => 0
+            case "POST" => 1
+            case "PATCH" => 2
+            case "PUT" => 3
+            case "DELETE" => 4
+          }
+
+          if (x.position != y.position)
+            x.position < y.position
+          else if (x.method != y.method)
+            fnMethRank(x.method) < fnMethRank(y.method)
+          else
+            x.nickname < y.nickname
+        })
         orderedOperations += Tuple3(op._1._1, op._1._2, ops)
       })
       val apis = (for ((endpoint, resourcePath, operationList) <- orderedOperations) yield {

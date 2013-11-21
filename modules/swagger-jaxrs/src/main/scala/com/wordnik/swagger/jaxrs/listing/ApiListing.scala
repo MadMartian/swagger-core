@@ -86,7 +86,14 @@ class ApiListingResource {
     })
     val references = (for(listing <- listings.getOrElse(List())) yield {
       ApiListingReference(listing.resourcePath, listing.description, listing.position)
-    }).toList.sortWith(_.position < _.position)
+    }).toList.sortWith((x, y) => {
+      if (x.position != y.position)
+        x.position < y.position
+      else if (x.description != y.description)
+        x.description.getOrElse("") < y.description.getOrElse("")
+      else
+        x.path < y.path
+    })
 
     val config = ConfigFactory.config
     val resourceListing = ResourceListing(config.apiVersion,
