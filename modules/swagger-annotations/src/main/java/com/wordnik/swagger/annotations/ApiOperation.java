@@ -59,14 +59,14 @@ public @interface ApiOperation {
   String nickname() default "";
   
   /** content type produced by this Api */
-  String produces() default "";
+  String[] produces() default {};
 
   /** media type consumed by this Api */
-  String consumes() default "";
+  String[] consumes() default {};
 
   /** protocols that this Api requires (i.e. https) */
-  String protocols() default "";
+  String[] protocols() default {};
 
   /** authorizations required by this Api */
-  String authorizations() default "";
+  String[] authorizations() default {};
 }

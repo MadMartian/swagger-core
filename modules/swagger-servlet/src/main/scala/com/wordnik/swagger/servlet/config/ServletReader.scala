@@ -69,20 +69,20 @@ class ServletReader extends ClassReader with ClassReaderUtils {
             else List()
           }
           val opa = method.getAnnotation(classOf[ApiOperation])
-          val produces = opa.produces match {
-            case e: String if(e != "") => e.split(",").map(_.trim).toList
+          val produces: List[String] = opa.produces match {
+            case Array(x, y @ _*) => (x +: y).toList
             case _ => List()
           }
-          val consumes = opa.consumes match {
-            case e: String if(e != "") => e.split(",").map(_.trim).toList
+          val consumes: List[String] = opa.consumes match {
+            case Array(x, y @ _*) => (x +: y).toList
             case _ => List()
           }
-          val protocols = opa.protocols match {
-            case e: String if(e != "") => e.split(",").map(_.trim).toList
+          val protocols: List[String] = opa.protocols match {
+            case Array(x, y @ _*) => (x +: y).toList
             case _ => List()
           }
-          val authorizations = opa.authorizations match {
-            case e: String if(e != "") => e.split(",").map(_.trim).toList
+          val authorizations: List[String] = opa.authorizations match {
+            case Array(x, y @ _*) => (x +: y).toList
             case _ => List()
           }
           val responseClass = opa.responseContainer match {

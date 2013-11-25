@@ -121,26 +121,26 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       genericParamTypes = parentMethods.map(pm => pm.getGenericParameterTypes).reduceRight(_ ++ _) ++ method.getGenericParameterTypes
     }
 
-    val produces = Option(apiOperation.produces) match {
-      case Some(e) if(e != "") => e.split(",").map(_.trim).toList
+    val produces: List[String] = apiOperation.produces match {
+      case Array(x, y @ _*) => (x +: y).toList
       case _ => method.getAnnotation(classOf[Produces]) match {
         case e: Produces => e.value.toList
         case _ => List()
       }
     }
-    val consumes = Option(apiOperation.consumes) match {
-      case Some(e) if(e != "") => e.split(",").map(_.trim).toList
+    val consumes: List[String] = apiOperation.consumes match {
+      case Array(x, y @ _*) => (x +: y).toList
       case _ => method.getAnnotation(classOf[Consumes]) match {
         case e: Consumes => e.value.toList
         case _ => List()
       }
     }
-    val protocols = Option(apiOperation.protocols) match {
-      case Some(e) if(e != "") => e.split(",").map(_.trim).toList
+    val protocols: List[String] = apiOperation.protocols match {
+      case Array(x, y @ _*) => (x +: y).toList
       case _ => List()
     }
-    val authorizations = Option(apiOperation.authorizations) match {
-      case Some(e) if(e != "") => e.split(",").map(_.trim).toList
+    val authorizations: List[String] = apiOperation.authorizations match {
+      case Array(x, y @ _*) => (x +: y).toList
       case _ => List()
     }
 
