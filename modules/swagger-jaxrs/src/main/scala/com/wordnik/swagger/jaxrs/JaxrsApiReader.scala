@@ -2,7 +2,7 @@ package com.wordnik.swagger.jaxrs
 
 import com.wordnik.swagger.annotations._
 import com.wordnik.swagger.config._
-import com.wordnik.swagger.reader.{ ClassReader, ClassReaderUtils }
+import com.wordnik.swagger.reader.{ScalaCardinality, ClassReader, ClassReaderUtils}
 import com.wordnik.swagger.core._
 import com.wordnik.swagger.core.util._
 import com.wordnik.swagger.core.ApiValues._
@@ -210,10 +210,10 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
               Option(readString(param.value)),
               exparamples.get(param.name) orElse Option(param.defaultValue) filter(_.trim.nonEmpty),
               param.required,
-              param.cardinality match {
-                case auto => Cardinality.isMultiple(param.dataType)
-                case singular => false
-                case multiple => true
+              param.cardinality.name() match {
+                case ScalaCardinality.auto => Cardinality.isMultiple(param.dataType)
+                case ScalaCardinality.singular => false
+                case ScalaCardinality.multiple => true
               },
               param.dataType.getName,
               allowableValues,
@@ -497,11 +497,11 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
         LOGGER.error("Allowable values annotation problem in method for parameter " + param.name)
     }
     param.required = annotation.required
-    param.allowMultiple = annotation.cardinality match
+    param.allowMultiple = annotation.cardinality.name() match
     {
-      case auto => param.allowMultiple
-      case singular => false
-      case multiple => true
+      case ScalaCardinality.auto => param.allowMultiple
+      case ScalaCardinality.singular => false
+      case ScalaCardinality.multiple => true
     }
     param.paramAccess = Option(readString(annotation.access))
   }

@@ -3,7 +3,7 @@ package com.wordnik.swagger.servlet.config
 import com.wordnik.swagger.annotations._
 import com.wordnik.swagger.converter.ModelConverters
 import com.wordnik.swagger.config._
-import com.wordnik.swagger.reader.{ ClassReader, ClassReaderUtils }
+import com.wordnik.swagger.reader.{ScalaCardinality, ClassReader, ClassReaderUtils}
 import com.wordnik.swagger.core._
 import com.wordnik.swagger.core.util._
 import com.wordnik.swagger.core.ApiValues._
@@ -55,10 +55,10 @@ class ServletReader extends ClassReader with ClassReaderUtils {
                   None,
                   Option(param.defaultValue).filter(_.trim.nonEmpty),
                   param.required,
-                  param.cardinality match {
-                    case auto => Cardinality.isMultiple(param.dataType)
-                    case singular => false
-                    case multiple => true
+                  param.cardinality.name() match {
+                    case ScalaCardinality.auto => Cardinality.isMultiple(param.dataType)
+                    case ScalaCardinality.singular => false
+                    case ScalaCardinality.multiple => true
                   },
                   param.dataType.getName,
                   allowableValues,
