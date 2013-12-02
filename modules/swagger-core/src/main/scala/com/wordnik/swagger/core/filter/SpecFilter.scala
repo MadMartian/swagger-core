@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.{ ListBuffer, HashMap, HashSet }
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 trait SwaggerSpecFilter {
   def isOperationAllowed(operation: Operation, api: ApiDescription, params: java.util.Map[String, java.util.List[String]], cookies: java.util.Map[String, String], headers: java.util.Map[String, java.util.List[String]]): Boolean
@@ -97,27 +98,13 @@ class SpecFilter {
         case _ => model
       }
     }).toList
-    val subTypes = (for(model <- topLevelModels) yield {
-      allModels match {
-        case Some(models) if(models.contains(model)) => {
-          val m = models(model)
-          (for(subType <- m.subTypes) yield {
-            val cls = SwaggerContext.loadClass(subType)
-            for(model <- ModelConverters.readAll(cls)) yield {
-              model.id
-            }
-          }).flatten.toList
-        }
-        case _ => List()
-      }
-    }).flatten.toList
-    val properties = requiredProperties(topLevelModels, allModels.getOrElse(Map()), new HashSet[String]())
-    topLevelModels ++ subTypes ++ properties
+    val dependencies = requiredDependencies(topLevelModels, allModels.getOrElse(Map()), new HashSet[String]())
+    topLevelModels ++ dependencies
   }
 
-  def requiredProperties(models: List[String], allModels: Map[String, Model], inspectedTypes: HashSet[String]): List[String] = {
+  def requiredDependencies(models: List[String], allModels: Map[String, Model], inspectedTypes: HashSet[String]): List[String] = {
     (for(modelname <- models) yield {
-      val modelnames = new HashSet[String]()
+      var modelnames = new HashSet[String]()
       if(allModels.contains(modelname) && !inspectedTypes.contains(modelname)) {
         val model = allModels(modelname)
         inspectedTypes += modelname
@@ -127,11 +114,19 @@ class SpecFilter {
             case None => modelnames += m._2.`type`
           }
         })
+
+       modelnames = modelnames ++
+        (for(subType <- model.subTypes) yield {
+          val cls = SwaggerContext.loadClass(subType)
+          for(model <- ModelConverters.readAll(cls)) yield {
+            model.id
+          }
+        }).flatten.toList
       }
       val unresolved = ((modelnames.toSet -- inspectedTypes).toSet & allModels.keys.toSet).toSet
       (
         if(unresolved.size > 0)
-          requiredProperties(unresolved.toList, allModels, inspectedTypes)
+          requiredDependencies(unresolved.toList, allModels, inspectedTypes)
         else List()
       ) ++ modelnames.toList
     }).flatten.toList
