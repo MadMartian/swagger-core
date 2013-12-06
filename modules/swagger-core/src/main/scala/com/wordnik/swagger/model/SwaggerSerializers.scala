@@ -188,6 +188,10 @@ object SwaggerSerializers extends Serializers {
           !!(json, OPERATION, "nickname", "missing required field", ERROR)
           ""
         }),
+        (json \ "audience").extractOrElse({
+          !!(json, OPERATION, "audience", "missing required field", ERROR)
+          ""
+        }),
         (json \ "position").extractOrElse(0),
         (json \ "produces").extractOrElse(List()),
         (json \ "consumes").extractOrElse(List()),
@@ -206,6 +210,7 @@ object SwaggerSerializers extends Serializers {
 
       ("method" -> x.method) ~
       ("summary" -> x.summary) ~
+      ("audience" -> x.audience) ~
       ("notes" -> x.notes) ~
       output ~
       ("nickname" -> x.nickname) ~
@@ -671,6 +676,10 @@ trait Serializers {
           !!(json, OPERATION, "nickname", "missing required field", ERROR)
           ""
         }),
+        (json \ "audience").extractOrElse({
+          !!(json, OPERATION, "audience", "missing required field", ERROR)
+          ""
+        }),
         (json \ "position").extractOrElse(0),
         (json \ "produces").extractOrElse(List()),
         (json \ "consumes").extractOrElse(List()),
@@ -686,6 +695,7 @@ trait Serializers {
       implicit val fmts = formats
       ("method" -> x.method) ~
       ("summary" -> x.summary) ~
+      ("audience" -> x.audience) ~
       ("notes" -> x.notes) ~
       ("responseClass" -> x.responseClass) ~
       ("nickname" -> x.nickname) ~

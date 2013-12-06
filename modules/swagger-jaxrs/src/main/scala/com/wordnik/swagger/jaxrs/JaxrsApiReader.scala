@@ -264,6 +264,7 @@ trait JaxrsApiReader extends ClassReader with ClassReaderUtils {
       apiOperation.notes,
       responseClass,
       method.getName,
+      apiOperation.audience.name(),
       apiOperation.position,
       produces,
       consumes,

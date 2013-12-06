@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.{ ListBuffer, HashMap, HashSet }
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 trait SwaggerSpecFilter {
   def isOperationAllowed(operation: Operation, api: ApiDescription, params: java.util.Map[String, java.util.List[String]], cookies: java.util.Map[String, String], headers: java.util.Map[String, java.util.List[String]]): Boolean

@@ -93,6 +93,7 @@ case class Operation (
   notes: String,
   responseClass: String,
   nickname: String,
+  audience: String,
   position: Int,
   produces: List[String] = List.empty,
   consumes: List[String] = List.empty,

@@ -16,12 +16,15 @@
 
 package com.wordnik.swagger.annotations;
 
+import com.wordnik.swagger.interfaces.Audience;
 import com.wordnik.swagger.interfaces.IRequestEntityExampleGenerator;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static com.wordnik.swagger.interfaces.Audience.*;
 
 /**
  * Describes an operation or typically a HTTP method against a specific path.  Operations
@@ -45,6 +48,9 @@ public @interface ApiOperation {
 
   /** currently not implemented in readers, reserved for future use */
   String tags() default "";
+
+  /** whether the API operation should be exposed for all to see or hidden by default and revealed for advanced users only */
+  Audience audience() default anyone;
 
   /** used to generate example entity code for body entity requests */
   Class<? extends IRequestEntityExampleGenerator> exampleGenerator() default IRequestEntityExampleGenerator.class;

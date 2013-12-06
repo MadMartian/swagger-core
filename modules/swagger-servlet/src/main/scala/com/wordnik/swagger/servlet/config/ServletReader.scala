@@ -108,6 +108,7 @@ class ServletReader extends ClassReader with ClassReaderUtils {
             opa.notes,
             responseClass,
             opa.nickname,
+            opa.audience.name(),
             opa.position,
             produces, // produces
             consumes, // consumes
